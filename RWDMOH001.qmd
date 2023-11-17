@@ -1,5 +1,5 @@
 ---
-title: "Assignmnet2"
+title: "Assignment2"
 author: "Siraj Rawood, RWDMOH001"
 format: html
 editor: visual
@@ -22,7 +22,6 @@ For this assignment we will concentrate on working with text data and using diff
 To start the analysis we first load the packages needed as well as the data with an introduction to the dataset. Then we can begin data cleaning and preprocessing, leading to the initial exploration of the dataset.We set out the methods to follow for performing sentiment analysis and for topic modelling. The enxt section are the results obtained from the methods section and finally a conclusion to summarise the findings and main ideas of the assignment.
 
 Aside from this report, a brief explanation on how ChatGPT was used to aid in this assignment is provided. This was done to assess the ability of whether such a a model is indeed able to help and the validity of the help.
-
 
 ```{r,echo=FALSE, message=FALSE, warning=FALSE}
 # Load Packages
@@ -179,14 +178,13 @@ speech_words = speech_sentences %>%
   select(sentID, speechID, president, year, word)
 ```
 
-
-
 # Method
+
 ## Sentiment Analysis
 
 Sentiment analysis is a method in which the emotional context of text can be assessed - for instance, are the words conveying a positive or negative emotion or meaning. This is done using a sentiment lexicon in which a variety of words have been assigned an outcome (dependant on the lexicon) - therefore making this a classification problem. For the data we are using, it can be used to provide some political analysis, seeing the overall tone and emotion of a speech, alluding to the governemnts view of the performance of the country and its outlook.
 
-As mentioned, a sentiment lexicon is integral. We have opted to use the *bing* lexicon. This contains a variety of words and assigns it to have either a positive or negative sentiment. To use this, we have joined it onto the tokenised words - showing the sentiment of each word used by each president for a given speech. We have also set words outside of the lexicon to neutral - the hope is that all or at least most  of the emotive words have been captured.
+As mentioned, a sentiment lexicon is integral. We have opted to use the *bing* lexicon. This contains a variety of words and assigns it to have either a positive or negative sentiment. To use this, we have joined it onto the tokenised words - showing the sentiment of each word used by each president for a given speech. We have also set words outside of the lexicon to neutral - the hope is that all or at least most of the emotive words have been captured.
 
 We then look at the most frequently used positive and negative words used by each president as well as how sentiment changes over time for the different presidents. To do this we look at the net sentiment of the speeches - the amount of positive words minus the negative words.
 
@@ -202,7 +200,6 @@ bingsentiments = speech_words %>%
 ```
 
 ## Topic Modelling
-
 
 Topic modeling is a natural language processing technique used to identify latent topics within a collection of documents. Its primary objective is to uncover the underlying themes or topics that contribute to the content of a large corpus. To do this we will be focusing on using Latent Dirichlet Allocation (LDA). In LDA, each document is considered a mix of various topics, and each topic is a probability distribution over words (a mixutre of words). The model assumes that documents are generated based on this probabilistic process, where words are selected from topics, and the mixture of topics determines the overall content of the document. However the number of topics over which to choose from needs to be set. This can be seen as a shortfall as how the outcome is interpreted is highly dependant on this. Choosing a small number of topics can help to summarise the documents very well but may not be able to identify all the distinct topics, whereas a large number of topics may be able to identify all the unqie topics in the corpus, however it won't really summarise the overarching theme in the corpus. It may also dilute the topics, making them fairly similar and redundant.
 
@@ -232,13 +229,14 @@ FindTopicsNumber_plot(num_topics)
 
 From this plot, it is ideal to choose the number of topics where it begins to plateau, being about 6. However with 6 presidents it is possible the topics may cluster around the individual presidents themselves and not around summarising the speeches too well. Moreover, 2 presidents only gave one speech each. Therefore we will opt for 4 topics instead. Now we use the `LDA()` function, specifying `k=4` for the topics. The outout produces $\beta$ and $\gamma$ values where $\beta$ is a parameter that gives the probability of a topic generating a particular word and $\gamma$ gives the proportions of topics in a document.
 
-We assess the $\beta$ values for the word-topic probabilities to see which words correspond to which topic, allowing us to make assumptions on what the topic is about. We then assess the $\gamm$ values for each document to see what the overarching topic is for each speech. 
-
+We assess the $\beta$ values for the word-topic probabilities to see which words correspond to which topic, allowing us to make assumptions on what the topic is about. We then assess the $\gamm$ values for each document to see what the overarching topic is for each speech.
 
 # Results
 
 ## Sentiment Analysis
-The figure below shows the positive words each president used the most throughout their speeches. From this figure we can see that "regard" appears most often for Mandela, Mbeki and Motlanthe while "support" is most often for Ramaphosa and Zuma. Both deKlerk and Mandela say "freedom" and "peace". Alluding to the political climate of Apartheid. Mbeki, Ramaphosa and Zuma make use of the word "progress" along with either "empowerment: or "reform" as well, due to all the policies and reforms they implemented. 
+
+The figure below shows the positive words each president used the most throughout their speeches. From this figure we can see that "regard" appears most often for Mandela, Mbeki and Motlanthe while "support" is most often for Ramaphosa and Zuma. Both deKlerk and Mandela say "freedom" and "peace". Alluding to the political climate of Apartheid. Mbeki, Ramaphosa and Zuma make use of the word "progress" along with either "empowerment: or"reform" as well, due to all the policies and reforms they implemented.
+
 ```{r,echo=FALSE, message=FALSE, warning=FALSE}
 bingsentiments %>%
   group_by(president) %>% 
@@ -257,6 +255,7 @@ bingsentiments %>%
   facet_wrap(vars(president), scales = "free") +
   theme(legend.position = 'none')
 ```
+
 [*Figure 1: Top 10 Positive Words Said per President.*]{.underline}
 
 Figure 2 below shows the negative words each president used the most throughout their speeches. We can see deKlerk uses "concerns", most likely to keep addressing the concerns people may have regarding the upcoming change. All presidents (excpet deKlerk) are addressing the crime and corruption in the country, as well as the the "poor" things.
@@ -281,9 +280,11 @@ bingsentiments %>%
 
 
 ```
+
 [*Figure 2: Top 10 Negative Words Said per President.*]{.underline}
 
 Lastly we also observe the net sentiment over time. It can seen that the general sentiment over the years are all positive except that of deKlerk, being the only negative sentiment speech. We can see that Mbeki shows very high positive sentiments, this was a time where the country was experiencing good growth. The same can be said for Ramaphosa.His speeches are generally positive. For Zuma we can see how it becomes decreasingly positive towards the end of his tenure, possibly due to all the allegations and controversies surrounding him.
+
 ```{r,echo=FALSE, message=FALSE, warning=FALSE}
 ## Net Sentiment of Speech
 netSentiment <- bingsentiments %>%
@@ -303,8 +304,8 @@ ggplot(netSentiment, aes(x = year, y = net_sentiment, fill = president)) +
 
 
 ```
-[*Figure 3: Net Sentiment per President Over the Years.*]{.underline}
 
+[*Figure 3: Net Sentiment per President Over the Years.*]{.underline}
 
 ## Topic Modelling
 
@@ -336,9 +337,10 @@ chosenTopic %>%
   facet_wrap(~ topic, scales = 'free') + 
   coord_flip() + xlab(" ") 
 ```
+
 [*Figure 4: Words per topic with highest values.*]{.underline}
 
-From this we now have an idea of what the different topics comprise of, however not with complete certainty. We will also consider the document-topic probabilities ($\gamma$ values) before making assumptions based on the meanings of the topics.Figure 5 shows for each president, which topic their speeches mostly belong to. Now using both Figure 4 and Figure 5 we can begin to understand the topics. 
+From this we now have an idea of what the different topics comprise of, however not with complete certainty. We will also consider the document-topic probabilities ($\gamma$ values) before making assumptions based on the meanings of the topics.Figure 5 shows for each president, which topic their speeches mostly belong to. Now using both Figure 4 and Figure 5 we can begin to understand the topics.
 
 ```{r,echo=FALSE, message=FALSE, warning=FALSE}
 gammas = tidy(speechLDA, matrix = 'gamma')
@@ -375,6 +377,7 @@ ggplot(speech_Gammas, aes(x = yearID, y = gamma, color = topic)) +
   scale_color_manual(values = custom_colors) +  # Set custom colors
   facet_wrap(~president, scales = "free", ncol = 2)
 ```
+
 [*Figure 5: Gamma Distribution by Topic for Each President.*]{.underline}
 
 Figure 5 above shows for deKlerk his speech topic is between 1 and 2 (not well shown). Mandela is mostly topic 1 and 4, Mbeki fluctuates between 1 and 4, Ramaphosa mainly 2 and Zuma mostly 3. Due to the number of topics and the number of presidents that gave multiple speeches being the same, it can be suggested that the topics found are very closely related to the president that delivered the speech. However, it can be see that the document-topic probabilities do still change for some of the presidents. From Figure 4 and 5, we can come to the following conclusions.
@@ -387,16 +390,16 @@ Figure 5 above shows for deKlerk his speech topic is between 1 and 2 (not well s
 
 **Topic 4** contains words relating to the social development, the programmes and policies put into place. This topic relates to Mandela and Mbeki, who did a lot of work for the country regarding this.
 
-
 # Conclusion
 
-In this assignment we have shown how to clean text data making it ready for sentiment analysis and topic modelling, being able to extract information from the data without having to go through everything individually. The data used for the assignment was text data from the SONA speeches over the years 1994 to 2023. 
+In this assignment we have shown how to clean text data making it ready for sentiment analysis and topic modelling, being able to extract information from the data without having to go through everything individually. The data used for the assignment was text data from the SONA speeches over the years 1994 to 2023.
 
 We have shown there were many steps involved in preparing the data and care must be taken to get it into a tidy format. Once that is done, how we can use sentiment analysis to find the overall sentiments from each of the presidents over the years. Using topic modelling we also could see the overall theme for the different speeches, showing what the imoprtant points were for each speech.
 
 Something to consider for the sentiment analysis is whether different lexicons should be used. This will also give a different view of the sentiments of the presidents. There is also the choice in the number of topics to choose when conduction LDA. One can adjust these to see if the topics still accurately summarise the different speeches.
 
 # References
+
 Durbach, I. 2023. Data Science for Industry Notes. Statistical Sciences Department, University of Cape Town.
 
 R Core Team. 2022. R: A language and environment for statistical computing. R Foundation for Statistical Computing, Vienna, Austria. URL https://www.R-project.org/.
@@ -405,12 +408,13 @@ Wickham H., François R., Henry L., Müller K., Vaughan D. 2023. *dplyr: A Gramm
 
 Wickham, H. 2022. *stringr: Simple, Consistent Wrappers for Common String Operations*. R package version 1.5.0, <https://CRAN.R-project.org/package=stringr>.
 
-
 # Github
 
+[GitHub Repo](https://github.com/sirajrawood/Assignment_2)
 
+https://github.com/sirajrawood/Assignment_2
 
+[GitHub Pages Website](https://sirajrawood.github.io/Assignment_2/)
 
-
-
+https://sirajrawood.github.io/Assignment_2/
 

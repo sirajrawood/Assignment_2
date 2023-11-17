@@ -7,7 +7,6 @@ website:
   navbar:
     left:
       - href: RWDMOH001.qmd
-        text: Home
       - ChatGPT.qmd
 
 format:
