@@ -1,0 +1,416 @@
+---
+title: "Assignmnet2"
+author: "Siraj Rawood, RWDMOH001"
+format: html
+editor: visual
+---
+
+```{r setup, include=FALSE, message=FALSE, warning=FALSE, echo=FALSE, fig.align='center'}
+knitr::opts_chunk$set(echo = TRUE)
+rm(list=ls())
+#setwd
+
+set.seed(2023)
+```
+
+\newpage
+
+# Introduction
+
+For this assignment we will concentrate on working with text data and using different methods to clean the data, making it usable for sentiment analysis and topic modelling. The data we will be using are the State of the Nation speeches in South Africa between 1994 and 2023. Analyising the sentiments over different speeches given by different presidents as well as finding the overarching topics for the speeches. Sentiment analysis will help in understanding the overall emotion and tone of the speeches and we will be able to see how this changes over time across the different presidents. Topic modelling on the other hand is a way for different documents (in our case the different speeches) to be summarised according to a set number of topics. This however is not necessarily as straightforward since the summary is left to interpretation based on the variety of words that fall into the topic. We will also view this over the different presidents and how this changes over time.
+
+To start the analysis we first load the packages needed as well as the data with an introduction to the dataset. Then we can begin data cleaning and preprocessing, leading to the initial exploration of the dataset.We set out the methods to follow for performing sentiment analysis and for topic modelling. The enxt section are the results obtained from the methods section and finally a conclusion to summarise the findings and main ideas of the assignment.
+
+Aside from this report, a brief explanation on how ChatGPT was used to aid in this assignment is provided. This was done to assess the ability of whether such a a model is indeed able to help and the validity of the help.
+
+
+```{r,echo=FALSE, message=FALSE, warning=FALSE}
+# Load Packages
+if (!require("pacman")) install.packages("pacman")
+#p_load(readtext, keras, tensorflow, tidyverse, ggplot2, ggpubr, stringr, wordcloud, tidytext, stopwords, plotly, lubridate, DMwR, caret, nnet, randomForest, gbm, ROSE, pROC,multiROC, rpart)
+
+library('readtext')
+library('keras')
+library('tensorflow')
+library('tidyverse')
+library('ggplot2')
+library('ggpubr')
+library('stringr')
+library('wordcloud')
+library('tidytext')
+library('stopwords')
+library('plotly')
+library('lubridate')
+#library('DMwR')
+library('caret')
+library('nnet')
+library('randomForest')
+library('gbm')
+library('ROSE')
+library('pROC')
+library('multiROC')
+library('rpart')
+library('tidyverse')
+library('tidytext')
+library('tokenizers')
+library('gghighlight')
+library('tictoc')
+library('ggpubr')
+library('topicmodels')
+library('textdata')
+library('forcats')
+
+```
+
+# Data Preparation
+
+The data is contained within the `sona-addresses-1994-2023.zip` file. It contains text files for each of the State of the Nation Address (SONA) speeches from 1994 to 2023 given by the South African president of the corresponding year. This is an annual even in which provides an opportunity for the country's president to address the nation, its legislative body (e.g., parliament or congress), and the broader public on the status of the country and priorities for the future.The data can be sourced from the [SONA website](https://www.gov.za/state-nation-address). Since this event happens twice during an election year, the file comprises of 36 speeches.
+
+We make use of the `sona-first-steps.R` file provided to read in the data. The files reads in all the text files and provides a data frame where each speech is an observation, with important columns being the president name, the date/year of the speech among others. Lastly, the date and unnecessary whitespace is removed.
+
+Now that the initial data preparation is done, we can tokenise the data - a unit of text to use for analysis: in this case into words and sentences. The `unnest_tokens()` function splits the text into a new data frame with one token per row, making the data tidy. We further clean the data by removing the dates and certain punctuation and escape sequences. Lastly we also remove stop words.
+
+```{r sona first steps,echo=FALSE, message=FALSE, warning=FALSE}
+
+
+# read in text data files and organise these into a data framesona-addresses-1994-2023/
+filenames <- c('1994_post_elections_Mandela.txt', '1994_pre_elections_deKlerk.txt', '1995_Mandela.txt', '1996_Mandela.txt', '1997_Mandela.txt', '1998_Mandela.txt', 
+               '1999_post_elections_Mandela.txt', '1999_pre_elections_Mandela.txt', '2000_Mbeki.txt', '2001_Mbeki.txt', '2002_Mbeki.txt', '2003_Mbeki.txt', 
+               '2004_post_elections_Mbeki.txt', '2004_pre_elections_Mbeki.txt', '2005_Mbeki.txt', '2006_Mbeki.txt', '2007_Mbeki.txt', '2008_Mbeki.txt', 
+               '2009_post_elections_Zuma.txt', '2009_pre_elections_Motlanthe.txt', '2010_Zuma.txt', '2011_Zuma.txt', '2012_Zuma.txt', '2013_Zuma.txt', 
+               '2014_post_elections_Zuma.txt', '2014_pre_elections_Zuma.txt', '2015_Zuma.txt', '2016_Zuma.txt', '2017_Zuma.txt', '2018_Ramaphosa.txt', 
+               '2019_post_elections_Ramaphosa.txt', '2019_pre_elections_Ramaphosa.txt', '2020_Ramaphosa.txt', '2021_Ramaphosa.txt', '2022_Ramaphosa.txt', '2023_Ramaphosa.txt')
+
+
+this_speech <- c()
+this_speech[1] <- readChar('sona-addresses-1994-2023/1994_post_elections_Mandela.txt', nchars = 27050)
+this_speech[2] <- readChar('sona-addresses-1994-2023/1994_pre_elections_deKlerk.txt', nchars = 12786)
+this_speech[3] <- readChar('sona-addresses-1994-2023/1995_Mandela.txt', nchars = 39019)
+this_speech[4] <- readChar('sona-addresses-1994-2023/1996_Mandela.txt', nchars = 39524)
+this_speech[5] <- readChar('sona-addresses-1994-2023/1997_Mandela.txt', nchars = 37489)
+this_speech[6] <- readChar('sona-addresses-1994-2023/1998_Mandela.txt', nchars = 45247)
+this_speech[7] <- readChar('sona-addresses-1994-2023/1999_post_elections_Mandela.txt', nchars = 34674)
+this_speech[8] <- readChar('sona-addresses-1994-2023/1999_pre_elections_Mandela.txt', nchars = 41225)
+this_speech[9] <- readChar('sona-addresses-1994-2023/2000_Mbeki.txt', nchars = 37552)
+this_speech[10] <- readChar('sona-addresses-1994-2023/2001_Mbeki.txt', nchars = 41719)
+this_speech[11] <- readChar('sona-addresses-1994-2023/2002_Mbeki.txt', nchars = 50544)
+this_speech[12] <- readChar('sona-addresses-1994-2023/2003_Mbeki.txt', nchars = 58284)
+this_speech[13] <- readChar('sona-addresses-1994-2023/2004_post_elections_Mbeki.txt', nchars = 34590)
+this_speech[14] <- readChar('sona-addresses-1994-2023/2004_pre_elections_Mbeki.txt', nchars = 39232)
+this_speech[15] <- readChar('sona-addresses-1994-2023/2005_Mbeki.txt', nchars = 54635)
+this_speech[16] <- readChar('sona-addresses-1994-2023/2006_Mbeki.txt', nchars = 48643)
+this_speech[17] <- readChar('sona-addresses-1994-2023/2007_Mbeki.txt', nchars = 48641)
+this_speech[18] <- readChar('sona-addresses-1994-2023/2008_Mbeki.txt', nchars = 44907)
+this_speech[19] <- readChar('sona-addresses-1994-2023/2009_post_elections_Zuma.txt', nchars = 31101)
+this_speech[20] <- readChar('sona-addresses-1994-2023/2009_pre_elections_Motlanthe.txt', nchars = 47157)
+this_speech[21] <- readChar('sona-addresses-1994-2023/2010_Zuma.txt', nchars = 26384)
+this_speech[22] <- readChar('sona-addresses-1994-2023/2011_Zuma.txt', nchars = 33281)
+this_speech[23] <- readChar('sona-addresses-1994-2023/2012_Zuma.txt', nchars = 33376)
+this_speech[24] <- readChar('sona-addresses-1994-2023/2013_Zuma.txt', nchars = 36006)
+this_speech[25] <- readChar('sona-addresses-1994-2023/2014_post_elections_Zuma.txt', nchars = 29403)
+this_speech[26] <- readChar('sona-addresses-1994-2023/2014_pre_elections_Zuma.txt', nchars = 36233)
+this_speech[27] <- readChar('sona-addresses-1994-2023/2015_Zuma.txt', nchars = 32860)
+this_speech[28] <- readChar('sona-addresses-1994-2023/2016_Zuma.txt', nchars = 32464)
+this_speech[29] <- readChar('sona-addresses-1994-2023/2017_Zuma.txt', nchars = 35981)
+this_speech[30] <- readChar('sona-addresses-1994-2023/2018_Ramaphosa.txt', nchars = 33290)
+this_speech[31] <- readChar('sona-addresses-1994-2023/2019_post_elections_Ramaphosa.txt', nchars = 42112)
+this_speech[32] <- readChar('sona-addresses-1994-2023/2019_pre_elections_Ramaphosa.txt', nchars = 56960)
+this_speech[33] <- readChar('sona-addresses-1994-2023/2020_Ramaphosa.txt', nchars = 47910)
+this_speech[34] <- readChar('sona-addresses-1994-2023/2021_Ramaphosa.txt', nchars = 43352)
+this_speech[35] <- readChar('sona-addresses-1994-2023/2022_Ramaphosa.txt', nchars = 52972)
+this_speech[36] <- readChar('sona-addresses-1994-2023/2022_Ramaphosa.txt', nchars = 52972)
+
+sona <- data.frame(filename = filenames, speech = this_speech, stringsAsFactors = FALSE)
+speech_extr <-  this_speech
+# extract year and president for each speech
+sona$year <- str_sub(sona$filename, start = 1, end = 4)
+sona$president_13 <- str_remove_all(str_extract(sona$filename, "[dA-Z].*\\."), "\\.")
+
+# clean the sona dataset by adding the date and removing unnecessary text
+replace_reg <- '(http.*?(\\s|.$))|(www.*?(\\s|.$))|&amp;|&lt;|&gt;|\n'
+
+sona <-sona %>%
+  mutate(speech = str_replace_all(speech, replace_reg , ' ')
+         ,date = str_sub(speech, start=1, end=30)
+         ,date = str_replace_all(date, "February", "02")
+         ,date = str_replace_all(date, "June", "06")
+         ,date = str_replace_all(date, "Feb", "02")
+         ,date = str_replace_all(date, "May", "05")
+         ,date = str_replace_all(date, "Jun", "06")
+         ,date = str_replace_all(date, "Thursday, ","")
+         ,date = str_replace_all(date, ' ', '-')        
+         ,date = str_replace_all(date, "[A-z]",'')
+         ,date = str_replace_all(date, '-----', '')
+         ,date = str_replace_all(date, '----', '')
+         ,date = str_replace_all(date, '---', '')
+         ,date = str_replace_all(date, '--', '')
+  )
+extr <- function(x){
+  pos <- regexpr("\n\n", x)
+  substr(x, pos + 2, nchar(x))
+}
+
+sona$speech <- sapply(speech_extr, extr)
+sona$speech <- gsub("\n", " ", sona$speech)
+sona$speech <- str_trim(sona$speech)
+
+```
+
+```{r tokenise, echo=FALSE, message=FALSE, warning=FALSE}
+ 
+### Separate speeches into sentences and sentences into words
+
+unnest_reg = "[^\\w_#@']"
+
+speech_sentences = as_tibble(sona) %>%
+  mutate(speechID = 1:36) %>%
+  rename(president = president_13) %>%
+  unnest_tokens(sentences, speech, token = "sentences") %>%
+  select(speechID, president, year, sentences) %>%
+  mutate(sentences, sentences = str_replace_all(sentences, "’", "'")) %>%
+  mutate(sentences, sentences = str_replace_all(sentences, "'", "")) %>%
+  mutate(sentences, sentences = str_remove_all(sentences, "[0-9]")) %>%
+  mutate(sentID = row_number())
+
+speech_words = speech_sentences %>% 
+  unnest_tokens(word, sentences, token = 'regex', pattern = unnest_reg) %>%
+  filter(str_detect(word, '[a-z]')) %>%
+  filter(!word %in% stop_words$word) %>%
+  select(sentID, speechID, president, year, word)
+```
+
+
+
+# Method
+## Sentiment Analysis
+
+Sentiment analysis is a method in which the emotional context of text can be assessed - for instance, are the words conveying a positive or negative emotion or meaning. This is done using a sentiment lexicon in which a variety of words have been assigned an outcome (dependant on the lexicon) - therefore making this a classification problem. For the data we are using, it can be used to provide some political analysis, seeing the overall tone and emotion of a speech, alluding to the governemnts view of the performance of the country and its outlook.
+
+As mentioned, a sentiment lexicon is integral. We have opted to use the *bing* lexicon. This contains a variety of words and assigns it to have either a positive or negative sentiment. To use this, we have joined it onto the tokenised words - showing the sentiment of each word used by each president for a given speech. We have also set words outside of the lexicon to neutral - the hope is that all or at least most  of the emotive words have been captured.
+
+We then look at the most frequently used positive and negative words used by each president as well as how sentiment changes over time for the different presidents. To do this we look at the net sentiment of the speeches - the amount of positive words minus the negative words.
+
+```{r,echo=FALSE, message=FALSE, warning=FALSE}
+### Join with Sentiment Lexicon
+afinn <- get_sentiments('afinn') 
+bing <- get_sentiments('bing') 
+nrc <- get_sentiments('nrc')
+bingsentiments = speech_words %>% 
+  left_join(bing, by = "word") %>%
+  rename(bing_sentiment = sentiment) %>%
+  mutate(bing_sentiment = ifelse(is.na(bing_sentiment), "neutral", bing_sentiment))
+```
+
+## Topic Modelling
+
+
+Topic modeling is a natural language processing technique used to identify latent topics within a collection of documents. Its primary objective is to uncover the underlying themes or topics that contribute to the content of a large corpus. To do this we will be focusing on using Latent Dirichlet Allocation (LDA). In LDA, each document is considered a mix of various topics, and each topic is a probability distribution over words (a mixutre of words). The model assumes that documents are generated based on this probabilistic process, where words are selected from topics, and the mixture of topics determines the overall content of the document. However the number of topics over which to choose from needs to be set. This can be seen as a shortfall as how the outcome is interpreted is highly dependant on this. Choosing a small number of topics can help to summarise the documents very well but may not be able to identify all the distinct topics, whereas a large number of topics may be able to identify all the unqie topics in the corpus, however it won't really summarise the overarching theme in the corpus. It may also dilute the topics, making them fairly similar and redundant.
+
+In order to do this we make use of the *topicmodels* and *ldatuning* packages. Before we can proceed with topic modelling, we need to format the data using `cast_dtm()`, this creates a DocumentTermMatrix object. In order to perform LDA, the number of topics needs to be chosen. In order to do this we use the `FindTopicsNumber()`. The output can be seen below:
+
+```{r,echo=FALSE, message=FALSE, warning=FALSE}
+
+
+speechTDF = speech_words %>%
+  group_by(speechID, word) %>%
+  count() %>%  
+  ungroup() 
+
+dtmSpeech = speechTDF %>% 
+  cast_dtm(speechID, word, n)
+
+library(ldatuning)
+set.seed(2023)
+# Assuming 'dtm' is your Document-Term Matrix
+num_topics <- FindTopicsNumber(dtmSpeech, topics = seq(2, 10, by = 1), metrics = c("Griffiths2004", "CaoJuan2009", "Arun2010"))
+
+# Print the results
+print(num_topics)
+
+FindTopicsNumber_plot(num_topics)
+```
+
+From this plot, it is ideal to choose the number of topics where it begins to plateau, being about 6. However with 6 presidents it is possible the topics may cluster around the individual presidents themselves and not around summarising the speeches too well. Moreover, 2 presidents only gave one speech each. Therefore we will opt for 4 topics instead. Now we use the `LDA()` function, specifying `k=4` for the topics. The outout produces $\beta$ and $\gamma$ values where $\beta$ is a parameter that gives the probability of a topic generating a particular word and $\gamma$ gives the proportions of topics in a document.
+
+We assess the $\beta$ values for the word-topic probabilities to see which words correspond to which topic, allowing us to make assumptions on what the topic is about. We then assess the $\gamm$ values for each document to see what the overarching topic is for each speech. 
+
+
+# Results
+
+## Sentiment Analysis
+The figure below shows the positive words each president used the most throughout their speeches. From this figure we can see that "regard" appears most often for Mandela, Mbeki and Motlanthe while "support" is most often for Ramaphosa and Zuma. Both deKlerk and Mandela say "freedom" and "peace". Alluding to the political climate of Apartheid. Mbeki, Ramaphosa and Zuma make use of the word "progress" along with either "empowerment: or "reform" as well, due to all the policies and reforms they implemented. 
+```{r,echo=FALSE, message=FALSE, warning=FALSE}
+bingsentiments %>%
+  group_by(president) %>% 
+  filter(bing_sentiment == "positive") %>%
+  count(word, sort = TRUE) %>%
+  group_by(president) %>%
+  slice(1:10) %>%
+  ungroup() %>%
+  mutate(word = fct_reorder(word, n, .desc = FALSE)) %>%
+  ggplot() +
+  aes(x = word, y = n, fill = president) +
+  geom_col() +
+  labs(x = "Words", y = "Count",
+       title = "Top 10 Positive Words Said per President") +
+  coord_flip() +
+  facet_wrap(vars(president), scales = "free") +
+  theme(legend.position = 'none')
+```
+[*Figure 1: Top 10 Positive Words Said per President.*]{.underline}
+
+Figure 2 below shows the negative words each president used the most throughout their speeches. We can see deKlerk uses "concerns", most likely to keep addressing the concerns people may have regarding the upcoming change. All presidents (excpet deKlerk) are addressing the crime and corruption in the country, as well as the the "poor" things.
+
+```{r,echo=FALSE, message=FALSE, warning=FALSE}
+bingsentiments %>%
+  group_by(president) %>% 
+  filter(bing_sentiment == "negative") %>%
+  count(word, sort = TRUE) %>%
+  group_by(president) %>%
+  slice(1:10) %>%
+  ungroup() %>%
+  mutate(word = fct_reorder(word, n, .desc = FALSE)) %>%
+  ggplot() +
+  aes(x = word, y = n, fill = president) +
+  geom_col() +
+  labs(x = "Words", y = "Count",
+       title = "Top 10 Negative Words Said per President") +
+  coord_flip() +
+  facet_wrap(vars(president), scales = "free") +
+  theme(legend.position = 'none')
+
+
+```
+[*Figure 2: Top 10 Negative Words Said per President.*]{.underline}
+
+Lastly we also observe the net sentiment over time. It can seen that the general sentiment over the years are all positive except that of deKlerk, being the only negative sentiment speech. We can see that Mbeki shows very high positive sentiments, this was a time where the country was experiencing good growth. The same can be said for Ramaphosa.His speeches are generally positive. For Zuma we can see how it becomes decreasingly positive towards the end of his tenure, possibly due to all the allegations and controversies surrounding him.
+```{r,echo=FALSE, message=FALSE, warning=FALSE}
+## Net Sentiment of Speech
+netSentiment <- bingsentiments %>%
+  group_by(year, president, bing_sentiment) %>%
+  summarise(count = n()) %>%
+  spread(bing_sentiment, count, fill = 0) %>%
+  mutate(net_sentiment = positive - negative)
+
+# Plot the net sentiment per president over the years
+ggplot(netSentiment, aes(x = year, y = net_sentiment, fill = president)) +
+  geom_bar(stat = "identity", position = "dodge") +
+    geom_smooth(aes(group = 1, color = "Average Net Sentiment"), method = "loess", formula = y ~ x, se = FALSE, size = 1) +
+  labs(x = "Year", y = "Net Sentiment", title = "Net Sentiment per President Over the Years") +
+  theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_fill_discrete(name = "President")+
+  scale_color_manual(name = "Average Net Sentiment", values = "black")
+
+
+```
+[*Figure 3: Net Sentiment per President Over the Years.*]{.underline}
+
+
+## Topic Modelling
+
+We first assess the $\beta$ values for each the word-topic probabilities. The greater the value, the more likely the word is to come from that topic. We can assess the words that tend to make up each topic to get an idea of what the topics are that summarise our documents. This can be seen by the figure below:
+
+```{r,echo=FALSE, message=FALSE, warning=FALSE}
+k=4
+speechLDA = LDA(dtmSpeech, k = k, control = list(seed = 2023))
+  
+chosenTopic = tidy(speechLDA, matrix = 'beta')
+
+
+```
+
+```{r,echo=FALSE, message=FALSE, warning=FALSE}
+custom_colors <- c("black", "magenta", "orange", "blue", "maroon", "darkgreen")
+chosenTopic %>%
+  group_by(term) %>%
+  slice(which.max(beta)) %>%
+  ungroup() %>%
+  group_by(topic) %>%
+  slice_max(n = 15, order_by = beta) %>% 
+  ungroup() %>%
+  arrange(topic, -beta) %>%
+  ggplot(aes(reorder(term, beta), beta, fill = factor(topic))) +
+  labs(x = "beta", title = "Words per topic with highest values") +
+  geom_col(show.legend = FALSE) +
+   scale_fill_manual(values = custom_colors) +
+  facet_wrap(~ topic, scales = 'free') + 
+  coord_flip() + xlab(" ") 
+```
+[*Figure 4: Words per topic with highest values.*]{.underline}
+
+From this we now have an idea of what the different topics comprise of, however not with complete certainty. We will also consider the document-topic probabilities ($\gamma$ values) before making assumptions based on the meanings of the topics.Figure 5 shows for each president, which topic their speeches mostly belong to. Now using both Figure 4 and Figure 5 we can begin to understand the topics. 
+
+```{r,echo=FALSE, message=FALSE, warning=FALSE}
+gammas = tidy(speechLDA, matrix = 'gamma')
+# gamma$gamma = round(gamma$gamma, 3)
+
+speech_Gammas = left_join(speech_sentences %>% 
+                        mutate(speechID = as.character(speechID)) %>%
+                        select(-sentences, -sentID), 
+                        gammas,
+                        by = c("speechID" = "document"),
+                        relationship = "many-to-many") %>%
+  group_by(speechID) %>%
+  slice_head(n = 4) %>%
+  ungroup() %>%
+  mutate(gamma = round(gamma, 3))
+speech_Gammas$topic <- factor(speech_Gammas$topic)
+speech_Gammas <- speech_Gammas %>% mutate(yearID = paste(year, speechID, sep = '_'))
+
+deKlerk_gamma = speech_Gammas %>% filter(president=="deKlerk")
+
+```
+
+```{r,echo=FALSE, message=FALSE, warning=FALSE}
+
+  
+custom_colors <- c("black", "magenta", "orange", "blue", "maroon", "darkgreen")
+
+# Plot with facet_wrap for each president
+ggplot(speech_Gammas, aes(x = yearID, y = gamma, color = topic)) +
+  geom_point() +
+  geom_line(aes(group = interaction(president, topic)), linetype = "solid") +
+  labs(x = "Speech ID", y = "Gamma", title = "Gamma Distribution by Topic for Each President") +
+  theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_color_manual(values = custom_colors) +  # Set custom colors
+  facet_wrap(~president, scales = "free", ncol = 2)
+```
+[*Figure 5: Gamma Distribution by Topic for Each President.*]{.underline}
+
+Figure 5 above shows for deKlerk his speech topic is between 1 and 2 (not well shown). Mandela is mostly topic 1 and 4, Mbeki fluctuates between 1 and 4, Ramaphosa mainly 2 and Zuma mostly 3. Due to the number of topics and the number of presidents that gave multiple speeches being the same, it can be suggested that the topics found are very closely related to the president that delivered the speech. However, it can be see that the document-topic probabilities do still change for some of the presidents. From Figure 4 and 5, we can come to the following conclusions.
+
+**Topic 1** contains words relating to the state of the country. We see the words "freedom", "past" and "people" appearing. These topics also relate to speeches from Mbeki, Mandela and deKlerk.
+
+**Topic 2** contains words relating to economic growth. This was the main topics for Ramaphosa and deKlerk based around time of drastic change for the country.
+
+**Topic 3** contains words relating to the development of the countries infrastructure and different sectors. What stands out is the word "honourable" and it can be seen how Zuma's speeches fall into this topic as well - he used this more often than the other presidents.
+
+**Topic 4** contains words relating to the social development, the programmes and policies put into place. This topic relates to Mandela and Mbeki, who did a lot of work for the country regarding this.
+
+
+# Conclusion
+
+In this assignment we have shown how to clean text data making it ready for sentiment analysis and topic modelling, being able to extract information from the data without having to go through everything individually. The data used for the assignment was text data from the SONA speeches over the years 1994 to 2023. 
+
+We have shown there were many steps involved in preparing the data and care must be taken to get it into a tidy format. Once that is done, how we can use sentiment analysis to find the overall sentiments from each of the presidents over the years. Using topic modelling we also could see the overall theme for the different speeches, showing what the imoprtant points were for each speech.
+
+Something to consider for the sentiment analysis is whether different lexicons should be used. This will also give a different view of the sentiments of the presidents. There is also the choice in the number of topics to choose when conduction LDA. One can adjust these to see if the topics still accurately summarise the different speeches.
+
+# References
+Durbach, I. 2023. Data Science for Industry Notes. Statistical Sciences Department, University of Cape Town.
+
+R Core Team. 2022. R: A language and environment for statistical computing. R Foundation for Statistical Computing, Vienna, Austria. URL https://www.R-project.org/.
+
+Wickham H., François R., Henry L., Müller K., Vaughan D. 2023. *dplyr: A Grammar of Data Manipulation*. R package version 1.1.3, https://CRAN.R-project.org/package=dplyr.
+
+Wickham, H. 2022. *stringr: Simple, Consistent Wrappers for Common String Operations*. R package version 1.5.0, <https://CRAN.R-project.org/package=stringr>.
+
+
+# Github
+
+
+
+
+
+
+

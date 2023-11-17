@@ -1,0 +1,20 @@
+---
+title: "ChatGPT"
+format: html
+editor: visual
+---
+
+For this assignment we have used ChatGPT for assistance where possible. This is to also assess whether it is indeed capable of doing so and if not, how to prompt it in a way that it does help.
+
+# Methods
+One thing I wasn't too sure aboiut was the number of topics to use for my LDA model. When asking ChatGPT it provided me with the `ldatuning` package which I used in the assignment. It also provided an explanation of what the package is and what functions from it I should use. It showed how to run the functions as well. There was an issue regarding this as the syntax was not completely correct. However, it is just a simple fix that anyone competent in R can do.
+
+
+# Code
+I used ChatGPT to help with some of the coding, especially when crating different graphs and plots. It does well in providing full output for the `ggplot` code. The only issue may come when it needs to use something specific to your data. An easy way to over come this is to outline your data frame and what the columns contain. From there it can complete whatever you ask. Another great help was adjusted small things on the graph. It would add whatever small extra detail you need in the code, furthermore, it also provides a detailed explanation of what it is doing.
+
+# Writing
+There were times where I wasn't too sure how to flesh out some parts of the assignment. It was easy to ask ChatGPT for a summary of a certain topic or idea I wished to convey. It provides a good enough answer although care still needs to be taken in making sure everything it provides is correct and/or follows correct grammar.
+
+# Conclusion
+ChatGPT is a powerful tool. It is easy to use and provides a quick response. It may not be completely accurate every time however, the fix is not too difficult, being whether you can correct yourself or let it know where it went wrong and asking for it to update its answer. Ultimately one can't use this mindlessly for more complex tasks, it does need the correct prompts to work well.

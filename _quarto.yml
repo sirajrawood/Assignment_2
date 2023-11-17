@@ -1,0 +1,17 @@
+project:
+  type: website
+  output-dir: docs
+
+website:
+  title: "A Quarto Website"
+  navbar:
+    left:
+      - href: RWDMOH001.qmd
+        text: Home
+      - ChatGPT.qmd
+
+format:
+  html:
+    theme: cosmo
+    css: styles.css
+    toc: true
